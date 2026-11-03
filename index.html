@@ -11,10 +11,34 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <h1>Halo, Dunia!</h1>
-  <p>Ini adalah aplikasi pertamaku copas dari claude.</p>
-  <button id="tombol">Klik aku</button>
-  <p id="pesan"></p>
-  <script src="app.js"></script>
+
+  <!-- Halaman login / daftar (tampil kalau belum login) -->
+  <main id="halaman-login" class="kartu" hidden>
+    <h1 id="judul-form">Masuk</h1>
+    <form id="form-auth">
+      <input id="email" type="email" placeholder="Email" autocomplete="email" required>
+      <input id="password" type="password" placeholder="Password (minimal 6 karakter)" autocomplete="current-password" required>
+      <button type="submit" id="tombol-kirim">Masuk</button>
+    </form>
+    <p id="error" class="error" role="alert"></p>
+    <p class="ganti">
+      <span id="teks-ganti">Belum punya akun?</span>
+      <a href="#" id="link-ganti">Daftar</a>
+    </p>
+  </main>
+
+  <!-- Halaman utama (tampil kalau sudah login) -->
+  <main id="halaman-utama" class="kartu" hidden>
+    <h1>Halo!</h1>
+    <p>Kamu masuk sebagai:</p>
+    <p id="email-user" class="email-user"></p>
+    <button id="tombol">Klik aku</button>
+    <p id="pesan"></p>
+    <button id="tombol-keluar" class="sekunder">Keluar</button>
+  </main>
+
+  <p id="memuat">Memuat...</p>
+
+  <script type="module" src="app.js"></script>
 </body>
 </html>
