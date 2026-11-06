@@ -63,3 +63,34 @@ button.sekunder {
 input[readonly] { background: #eef0f7; color: #6b7280; }
 .status { min-height: 1.2em; color: #374151; }
 .status.error { color: #b91c1c; }
+
+/* ---- Tab dan Chat ---- */
+#halaman-app { max-width: 380px; margin: 0 auto; }
+.tab { display: flex; gap: 8px; margin-bottom: 14px; }
+.tab button {
+  flex: 1; font-size: 16px; padding: 10px;
+  background: white; color: #4f46e5; border: 1px solid #4f46e5;
+}
+.tab button.aktif { background: #4f46e5; color: white; }
+
+.chat { padding: 16px 14px; }
+.chat h2 { margin: 0 0 10px; font-size: 18px; }
+.daftar-pesan {
+  height: 55vh; overflow-y: auto; text-align: left;
+  display: flex; flex-direction: column; gap: 8px;
+  padding: 4px 2px 8px;
+}
+.pesan {
+  align-self: flex-start; max-width: 85%;
+  background: #eef0f7; padding: 8px 12px; border-radius: 12px 12px 12px 2px;
+}
+.pesan.saya {
+  align-self: flex-end; background: #e0e7ff; border-radius: 12px 12px 2px 12px;
+}
+.pesan-nama { font-size: 12px; font-weight: bold; color: #4f46e5; }
+.pesan-teks { white-space: pre-wrap; word-break: break-word; }
+.pesan-jam { font-size: 11px; color: #6b7280; text-align: right; }
+
+.form-chat { display: flex; gap: 8px; margin-top: 8px; }
+.form-chat input { margin: 0; flex: 1; }
+.form-chat button { font-size: 16px; padding: 12px 16px; }

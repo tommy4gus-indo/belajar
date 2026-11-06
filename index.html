@@ -27,24 +27,43 @@
     </p>
   </main>
 
-  <!-- Halaman profil (tampil kalau sudah login) -->
-  <main id="halaman-utama" class="kartu" hidden>
-    <h1>Profil Saya</h1>
-    <form id="form-profil" class="rata-kiri">
-      <label for="profil-email">Email</label>
-      <input id="profil-email" type="email" readonly>
+  <!-- Aplikasi (tampil kalau sudah login) -->
+  <div id="halaman-app" hidden>
+    <nav class="tab">
+      <button id="tab-chat" class="aktif">Chat</button>
+      <button id="tab-profil">Profil</button>
+    </nav>
 
-      <label for="profil-nama">Nama</label>
-      <input id="profil-nama" type="text" placeholder="Nama lengkap" maxlength="60" autocomplete="name" required>
+    <!-- Chat -->
+    <section id="bagian-chat" class="kartu chat">
+      <h2>🌍 World</h2>
+      <div id="daftar-pesan" class="daftar-pesan" aria-live="polite"></div>
+      <p id="info-chat" class="status"></p>
+      <form id="form-chat" class="form-chat">
+        <input id="teks-chat" type="text" placeholder="Tulis pesan..." maxlength="500" autocomplete="off" required>
+        <button type="submit" id="tombol-chat">Kirim</button>
+      </form>
+    </section>
 
-      <label for="profil-hp">No. HP</label>
-      <input id="profil-hp" type="tel" placeholder="08xxxxxxxxxx" maxlength="20" autocomplete="tel" inputmode="tel" required>
+    <!-- Profil -->
+    <section id="bagian-profil" class="kartu" hidden>
+      <h1>Profil Saya</h1>
+      <form id="form-profil" class="rata-kiri">
+        <label for="profil-email">Email</label>
+        <input id="profil-email" type="email" readonly>
 
-      <button type="submit" id="tombol-simpan">Simpan</button>
-    </form>
-    <p id="status-profil" class="status" role="status"></p>
-    <button id="tombol-keluar" class="sekunder">Keluar</button>
-  </main>
+        <label for="profil-nama">Nama</label>
+        <input id="profil-nama" type="text" placeholder="Nama lengkap" maxlength="60" autocomplete="name" required>
+
+        <label for="profil-hp">No. HP</label>
+        <input id="profil-hp" type="tel" placeholder="08xxxxxxxxxx" maxlength="20" autocomplete="tel" inputmode="tel" required>
+
+        <button type="submit" id="tombol-simpan">Simpan</button>
+      </form>
+      <p id="status-profil" class="status" role="status"></p>
+      <button id="tombol-keluar" class="sekunder">Keluar</button>
+    </section>
+  </div>
 
   <p id="memuat">Memuat...</p>
 

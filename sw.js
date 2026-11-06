@@ -1,4 +1,4 @@
-const CACHE = "app-pertama-v2";
+const CACHE = "app-pertama-v4";
 const FILES = [
   "./",
   "./index.html",
@@ -28,6 +28,14 @@ self.addEventListener("activate", (e) => {
 // Kalau tidak ada sinyal, pakai salinan yang tersimpan (jadi tetap bisa offline).
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
+
+  const url = new URL(e.request.url);
+  const punyaSendiri = url.origin === self.location.origin;
+  const pustakaFirebase = url.hostname === "www.gstatic.com";
+
+  // Jangan ikut campur permintaan data Firebase (chat realtime, login, dll)
+  if (!punyaSendiri && !pustakaFirebase) return;
+
   e.respondWith(
     fetch(e.request)
       .then((res) => {

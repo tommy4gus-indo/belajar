@@ -11,6 +11,12 @@ import {
   doc,
   getDoc,
   setDoc,
+  addDoc,
+  collection,
+  query,
+  orderBy,
+  limit,
+  onSnapshot,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
@@ -32,13 +38,15 @@ const db = getFirestore(app);
 // Ambil elemen-elemen di halaman
 const $ = (id) => document.getElementById(id);
 const halamanLogin = $("halaman-login");
-const halamanUtama = $("halaman-utama");
+const halamanApp = $("halaman-app");
 const memuat = $("memuat");
 const formAuth = $("form-auth");
 const errorEl = $("error");
 const statusProfil = $("status-profil");
 
-let modeDaftar = false; // false = masuk, true = daftar
+let modeDaftar = false;   // false = masuk, true = daftar
+let namaSaya = "";        // nama dari profil (dipakai sebagai nama di chat)
+let hentiChat = null;     // fungsi untuk berhenti mendengarkan chat
 
 // Terjemahan pesan error supaya mudah dimengerti
 function pesanError(kode) {
@@ -59,7 +67,8 @@ function pesanError(kode) {
   return daftar[kode] || "Terjadi kesalahan: " + kode;
 }
 
-// Ganti tampilan antara Masuk dan Daftar
+// ---------- LOGIN / DAFTAR ----------
+
 function aturMode() {
   $("judul-form").textContent = modeDaftar ? "Daftar" : "Masuk";
   $("tombol-kirim").textContent = modeDaftar ? "Daftar" : "Masuk";
@@ -75,7 +84,6 @@ $("link-ganti").addEventListener("click", (e) => {
   aturMode();
 });
 
-// Saat form login/daftar dikirim
 formAuth.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorEl.textContent = "";
@@ -99,8 +107,20 @@ formAuth.addEventListener("submit", async (e) => {
   }
 });
 
-// Tombol keluar
 $("tombol-keluar").addEventListener("click", () => signOut(auth));
+
+// ---------- TAB CHAT / PROFIL ----------
+
+function bukaTab(nama) {
+  const chat = nama === "chat";
+  $("bagian-chat").hidden = !chat;
+  $("bagian-profil").hidden = chat;
+  $("tab-chat").classList.toggle("aktif", chat);
+  $("tab-profil").classList.toggle("aktif", !chat);
+  if (chat) gulirKeBawah();
+}
+$("tab-chat").addEventListener("click", () => bukaTab("chat"));
+$("tab-profil").addEventListener("click", () => bukaTab("profil"));
 
 // ---------- PROFIL ----------
 
@@ -109,11 +129,11 @@ function tampilStatus(teks, adaError = false) {
   statusProfil.className = adaError ? "status error" : "status";
 }
 
-// Ambil data profil dari Firestore dan isi ke form
 async function muatProfil(user) {
   $("profil-email").value = user.email;
   $("profil-nama").value = "";
   $("profil-hp").value = "";
+  namaSaya = "";
   tampilStatus("Memuat data...");
 
   try {
@@ -122,6 +142,7 @@ async function muatProfil(user) {
       const data = snap.data();
       $("profil-nama").value = data.nama || "";
       $("profil-hp").value = data.hp || "";
+      namaSaya = data.nama || "";
       tampilStatus("");
     } else {
       tampilStatus("Lengkapi data kamu lalu klik Simpan.");
@@ -129,9 +150,9 @@ async function muatProfil(user) {
   } catch (err) {
     tampilStatus(pesanError(err.code), true);
   }
+  aturInfoChat();
 }
 
-// Simpan data profil ke Firestore
 $("form-profil").addEventListener("submit", async (e) => {
   e.preventDefault();
   const user = auth.currentUser;
@@ -155,6 +176,8 @@ $("form-profil").addEventListener("submit", async (e) => {
       { nama, hp, email: user.email, diubah: serverTimestamp() },
       { merge: true }
     );
+    namaSaya = nama;
+    aturInfoChat();
     tampilStatus("Tersimpan!");
   } catch (err) {
     tampilStatus(pesanError(err.code), true);
@@ -163,15 +186,126 @@ $("form-profil").addEventListener("submit", async (e) => {
   }
 });
 
-// Dipanggil otomatis tiap status login berubah (login, keluar, atau buka ulang app)
+// ---------- CHAT ----------
+
+const KANAL = "world"; // nanti bisa diganti: id PT, id divisi, dan seterusnya
+const daftarPesan = $("daftar-pesan");
+
+function gulirKeBawah() {
+  daftarPesan.scrollTop = daftarPesan.scrollHeight;
+}
+
+// Aktifkan atau matikan kolom ketik tergantung sudah ada nama atau belum
+function aturInfoChat() {
+  const bisa = namaSaya !== "";
+  $("teks-chat").disabled = !bisa;
+  $("tombol-chat").disabled = !bisa;
+  $("info-chat").textContent = bisa ? "" : "Isi nama di tab Profil dulu supaya bisa chat.";
+}
+
+function formatJam(ts) {
+  if (!ts) return "";
+  return ts.toDate().toLocaleTimeString("id-ID", { hour: "2-digit", minute: "2-digit" });
+}
+
+// Tampilkan daftar pesan (pakai textContent supaya aman dari kode jahat)
+function gambarPesan(snapshot) {
+  const dekatBawah =
+    daftarPesan.scrollHeight - daftarPesan.scrollTop - daftarPesan.clientHeight < 80;
+
+  const uidSaya = auth.currentUser ? auth.currentUser.uid : null;
+  const urut = snapshot.docs.map((d) => d.data({ serverTimestamps: "estimate" })).reverse();
+
+  daftarPesan.replaceChildren();
+  if (urut.length === 0) {
+    const kosong = document.createElement("p");
+    kosong.className = "status";
+    kosong.textContent = "Belum ada pesan. Jadi yang pertama menyapa!";
+    daftarPesan.appendChild(kosong);
+  }
+
+  for (const p of urut) {
+    const gelembung = document.createElement("div");
+    gelembung.className = "pesan" + (p.uid === uidSaya ? " saya" : "");
+
+    const nama = document.createElement("div");
+    nama.className = "pesan-nama";
+    nama.textContent = p.nama;
+
+    const teks = document.createElement("div");
+    teks.className = "pesan-teks";
+    teks.textContent = p.teks;
+
+    const jam = document.createElement("div");
+    jam.className = "pesan-jam";
+    jam.textContent = formatJam(p.waktu);
+
+    gelembung.append(nama, teks, jam);
+    daftarPesan.appendChild(gelembung);
+  }
+
+  if (dekatBawah || urut.length > 0 && !daftarPesan.dataset.sudahGulir) {
+    gulirKeBawah();
+    daftarPesan.dataset.sudahGulir = "1";
+  }
+}
+
+function mulaiChat() {
+  if (hentiChat) hentiChat();
+  delete daftarPesan.dataset.sudahGulir;
+  const q = query(
+    collection(db, "chat", KANAL, "pesan"),
+    orderBy("waktu", "desc"),
+    limit(50)
+  );
+  hentiChat = onSnapshot(
+    q,
+    gambarPesan,
+    (err) => { $("info-chat").textContent = pesanError(err.code); }
+  );
+}
+
+function hentikanChat() {
+  if (hentiChat) { hentiChat(); hentiChat = null; }
+  daftarPesan.replaceChildren();
+}
+
+$("form-chat").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+  const input = $("teks-chat");
+  const teks = input.value.trim();
+  if (!user || !namaSaya || !teks) return;
+
+  input.value = "";
+  try {
+    await addDoc(collection(db, "chat", KANAL, "pesan"), {
+      teks,
+      uid: user.uid,
+      nama: namaSaya,
+      waktu: serverTimestamp()
+    });
+  } catch (err) {
+    input.value = teks; // kembalikan teks supaya tidak hilang
+    $("info-chat").textContent = pesanError(err.code);
+  }
+});
+
+// ---------- STATUS LOGIN ----------
+
 onAuthStateChanged(auth, (user) => {
   memuat.hidden = true;
   if (user) {
     halamanLogin.hidden = true;
-    halamanUtama.hidden = false;
+    halamanApp.hidden = false;
+    bukaTab("chat");
+    aturInfoChat();
     muatProfil(user);
+    mulaiChat();
   } else {
-    halamanUtama.hidden = true;
+    hentikanChat();
+    namaSaya = "";
+    halamanApp.hidden = true;
     halamanLogin.hidden = false;
   }
 });
