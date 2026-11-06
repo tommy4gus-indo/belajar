@@ -6,6 +6,13 @@ import {
   signInWithEmailAndPassword,
   signOut
 } from "https://www.gstatic.com/firebasejs/10.14.1/firebase-auth.js";
+import {
+  getFirestore,
+  doc,
+  getDoc,
+  setDoc,
+  serverTimestamp
+} from "https://www.gstatic.com/firebasejs/10.14.1/firebase-firestore.js";
 
 // Config Firebase proyek kamu
 const firebaseConfig = {
@@ -20,6 +27,7 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
+const db = getFirestore(app);
 
 // Ambil elemen-elemen di halaman
 const $ = (id) => document.getElementById(id);
@@ -28,6 +36,7 @@ const halamanUtama = $("halaman-utama");
 const memuat = $("memuat");
 const formAuth = $("form-auth");
 const errorEl = $("error");
+const statusProfil = $("status-profil");
 
 let modeDaftar = false; // false = masuk, true = daftar
 
@@ -43,7 +52,9 @@ function pesanError(kode) {
     "auth/wrong-password": "Password salah.",
     "auth/too-many-requests": "Terlalu banyak percobaan. Coba lagi beberapa menit lagi.",
     "auth/network-request-failed": "Tidak ada koneksi internet.",
-    "auth/operation-not-allowed": "Login Email/Password belum diaktifkan di Firebase."
+    "auth/operation-not-allowed": "Login Email/Password belum diaktifkan di Firebase.",
+    "permission-denied": "Tidak punya izin. Cek Rules di Firestore.",
+    "unavailable": "Tidak ada koneksi internet."
   };
   return daftar[kode] || "Terjadi kesalahan: " + kode;
 }
@@ -64,7 +75,7 @@ $("link-ganti").addEventListener("click", (e) => {
   aturMode();
 });
 
-// Saat form dikirim
+// Saat form login/daftar dikirim
 formAuth.addEventListener("submit", async (e) => {
   e.preventDefault();
   errorEl.textContent = "";
@@ -91,18 +102,74 @@ formAuth.addEventListener("submit", async (e) => {
 // Tombol keluar
 $("tombol-keluar").addEventListener("click", () => signOut(auth));
 
-// Tombol contoh di halaman utama
-$("tombol").addEventListener("click", () => {
-  $("pesan").textContent = "Berhasil! Kamu sudah login.";
+// ---------- PROFIL ----------
+
+function tampilStatus(teks, adaError = false) {
+  statusProfil.textContent = teks;
+  statusProfil.className = adaError ? "status error" : "status";
+}
+
+// Ambil data profil dari Firestore dan isi ke form
+async function muatProfil(user) {
+  $("profil-email").value = user.email;
+  $("profil-nama").value = "";
+  $("profil-hp").value = "";
+  tampilStatus("Memuat data...");
+
+  try {
+    const snap = await getDoc(doc(db, "profil", user.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      $("profil-nama").value = data.nama || "";
+      $("profil-hp").value = data.hp || "";
+      tampilStatus("");
+    } else {
+      tampilStatus("Lengkapi data kamu lalu klik Simpan.");
+    }
+  } catch (err) {
+    tampilStatus(pesanError(err.code), true);
+  }
+}
+
+// Simpan data profil ke Firestore
+$("form-profil").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const nama = $("profil-nama").value.trim();
+  const hp = $("profil-hp").value.trim();
+
+  if (!/^[0-9+\-\s]{8,20}$/.test(hp)) {
+    tampilStatus("Nomor HP tidak valid. Isi angka saja, minimal 8 digit.", true);
+    return;
+  }
+
+  const tombol = $("tombol-simpan");
+  tombol.disabled = true;
+  tampilStatus("Menyimpan...");
+
+  try {
+    await setDoc(
+      doc(db, "profil", user.uid),
+      { nama, hp, email: user.email, diubah: serverTimestamp() },
+      { merge: true }
+    );
+    tampilStatus("Tersimpan!");
+  } catch (err) {
+    tampilStatus(pesanError(err.code), true);
+  } finally {
+    tombol.disabled = false;
+  }
 });
 
 // Dipanggil otomatis tiap status login berubah (login, keluar, atau buka ulang app)
 onAuthStateChanged(auth, (user) => {
   memuat.hidden = true;
   if (user) {
-    $("email-user").textContent = user.email;
     halamanLogin.hidden = true;
     halamanUtama.hidden = false;
+    muatProfil(user);
   } else {
     halamanUtama.hidden = true;
     halamanLogin.hidden = false;

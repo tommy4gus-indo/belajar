@@ -57,3 +57,9 @@ button.sekunder {
 .error { color: #b91c1c; min-height: 1.2em; }
 .ganti a { color: #4f46e5; font-weight: bold; }
 .email-user { font-weight: bold; word-break: break-all; }
+
+.rata-kiri { text-align: left; }
+.rata-kiri label { display: block; font-size: 14px; margin-bottom: 4px; color: #4b5563; }
+input[readonly] { background: #eef0f7; color: #6b7280; }
+.status { min-height: 1.2em; color: #374151; }
+.status.error { color: #b91c1c; }

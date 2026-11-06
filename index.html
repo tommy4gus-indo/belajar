@@ -27,13 +27,22 @@
     </p>
   </main>
 
-  <!-- Halaman utama (tampil kalau sudah login) -->
+  <!-- Halaman profil (tampil kalau sudah login) -->
   <main id="halaman-utama" class="kartu" hidden>
-    <h1>Halo!</h1>
-    <p>Kamu masuk sebagai:</p>
-    <p id="email-user" class="email-user"></p>
-    <button id="tombol">Klik aku</button>
-    <p id="pesan"></p>
+    <h1>Profil Saya</h1>
+    <form id="form-profil" class="rata-kiri">
+      <label for="profil-email">Email</label>
+      <input id="profil-email" type="email" readonly>
+
+      <label for="profil-nama">Nama</label>
+      <input id="profil-nama" type="text" placeholder="Nama lengkap" maxlength="60" autocomplete="name" required>
+
+      <label for="profil-hp">No. HP</label>
+      <input id="profil-hp" type="tel" placeholder="08xxxxxxxxxx" maxlength="20" autocomplete="tel" inputmode="tel" required>
+
+      <button type="submit" id="tombol-simpan">Simpan</button>
+    </form>
+    <p id="status-profil" class="status" role="status"></p>
     <button id="tombol-keluar" class="sekunder">Keluar</button>
   </main>
 
