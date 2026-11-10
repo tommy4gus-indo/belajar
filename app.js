@@ -271,6 +271,22 @@ function hentikanChat() {
 }
 
 $("form-chat").addEventListener("submit", async (e) => {
+  const kolomChat = $("teks-chat");
+
+function sesuaikanTinggi() {
+  kolomChat.style.height = "auto";
+  kolomChat.style.height = Math.min(kolomChat.scrollHeight, 160) + "px";
+}
+kolomChat.addEventListener("input", sesuaikanTinggi);
+
+kolomChat.addEventListener("keydown", (e) => {
+  const komputer = window.matchMedia("(hover: hover)").matches;
+  if (e.key === "Enter" && !e.shiftKey && komputer) {
+    e.preventDefault();
+    $("form-chat").requestSubmit();
+  }
+});
+  
   e.preventDefault();
   const user = auth.currentUser;
   const input = $("teks-chat");
@@ -278,6 +294,7 @@ $("form-chat").addEventListener("submit", async (e) => {
   if (!user || !namaSaya || !teks) return;
 
   input.value = "";
+   sesuaikanTinggi();
   try {
     await addDoc(collection(db, "chat", KANAL, "pesan"), {
       teks,
