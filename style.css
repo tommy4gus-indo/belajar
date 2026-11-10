@@ -92,5 +92,13 @@ input[readonly] { background: #eef0f7; color: #6b7280; }
 .pesan-jam { font-size: 11px; color: #6b7280; text-align: right; }
 
 .form-chat { display: flex; gap: 8px; margin-top: 8px; }
-.form-chat input { margin: 0; flex: 1; }
+.form-chat {  flex-direction: column; }
+.form-chat textarea {
+  width: 100%; margin: 0;
+  font-family: inherit; font-size: 16px;
+  padding: 12px;
+  border: 1px solid #c7cbe0; border-radius: 12px;
+  resize: none;
+  min-height: 56px; max-height: 160px;
+}
 .form-chat button { font-size: 16px; padding: 12px 16px; }
